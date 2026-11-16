@@ -6,6 +6,9 @@
 import { BlurView } from 'expo-blur';
 import React, { ReactNode } from 'react';
 import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
   ActivityIndicator,
   KeyboardTypeOptions,
   Modal,
@@ -353,7 +356,7 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.value)}
-            style={{ flex: 1, minHeight: 40, paddingHorizontal: 14, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.select : 'transparent' }}
+            style={{ flex: 1, minHeight: 40, paddingHorizontal: 6, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.select : 'transparent' }}
           >
             <Txt size={14} weight={on ? '600' : '400'} color={on ? t.onSelect : t.textDim} numberOfLines={1}>{o.label}</Txt>
           </Pressable>
@@ -487,5 +490,106 @@ export function MetalRail() {
         <Rect width={100} height={10} fill="url(#rail)" />
       </Svg>
     </View>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Motion: soft entrances so screens and steps glide in. Honours the "reduce motion" settings.
+// ---------------------------------------------------------------------------------------------
+
+export function useReducedMotion() {
+  const pref = useApp((s) => s.settings.reduceMotion);
+  const [os, setOs] = React.useState(false);
+  React.useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setOs).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setOs);
+    return () => sub.remove();
+  }, []);
+  return pref || os;
+}
+
+/** Fades and lifts its children in once, when mounted (key it to replay). */
+export function FadeIn({ children, delay = 0, style, distance = 10 }: { children: ReactNode; delay?: number; style?: StyleProp<ViewStyle>; distance?: number }) {
+  const reduce = useReducedMotion();
+  const [v] = React.useState(() => new Animated.Value(reduce ? 1 : 0));
+  React.useEffect(() => {
+    if (reduce) return v.setValue(1);
+    Animated.timing(v, { toValue: 1, duration: 260, delay, easing: Easing.out(Easing.cubic), useNativeDriver: Platform.OS !== 'web' }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
+  return (
+    <Animated.View style={[{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [distance, 0] }) }] }, style]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+const GLOW = 'rgba(255,130,84,';
+/** Selectable tile: hover glow on web, peach glow and a soft pop when selected. */
+export function Tile({ icon, label, hint, selected, onPress, style }: { icon: IconName; label: string; hint?: string; selected: boolean; onPress: () => void; style?: StyleProp<ViewStyle> }) {
+  const t = useTheme();
+  const reduce = useReducedMotion();
+  const [scale] = React.useState(() => new Animated.Value(1));
+  const press = () => {
+    if (!reduce) {
+      scale.setValue(0.96);
+      Animated.spring(scale, { toValue: 1, friction: 5, tension: 160, useNativeDriver: Platform.OS !== 'web' }).start();
+    }
+    onPress();
+  };
+  return (
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <Pressable accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={hint ? `${label}. ${hint}` : label} onPress={press}>
+        {(state: any) => {
+          const hovered = !!state.hovered;
+          const glow = selected
+            ? { boxShadow: `0 0 0 4px ${GLOW}.22), 0 12px 28px -10px ${GLOW}.55)`, shadowColor: '#FF8254', shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, shadowOpacity: 0.45, elevation: 6 }
+            : hovered
+              ? { boxShadow: `0 0 0 3px ${GLOW}.14), 0 10px 24px -12px ${GLOW}.4)` }
+              : (t.shadow as object);
+          return (
+            <View
+              style={[
+                {
+                  minHeight: 118,
+                  padding: 16,
+                  gap: 10,
+                  borderRadius: R.rounded,
+                  backgroundColor: selected ? t.raised : t.surface,
+                  borderWidth: 2,
+                  borderColor: selected ? t.primary : hovered ? tint(t.primary, 0.5) : t.border,
+                  justifyContent: 'space-between',
+                },
+                glow as any,
+              ]}
+            >
+              <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? t.primary : t.inset }}>
+                  <Icon name={icon} size={24} color={selected ? t.onPrimary : t.text} />
+                </View>
+                {selected ? <Tick on size={22} /> : null}
+              </Row>
+              <View style={{ gap: 2 }}>
+                <Txt weight="700" numberOfLines={2}>{label}</Txt>
+                {hint ? <Txt size={12} dim numberOfLines={2}>{hint}</Txt> : null}
+              </View>
+            </View>
+          );
+        }}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+/** Bottom bar with Back and Next — sits above the content, always reachable with one thumb. */
+export function StepBar({ onBack, onNext, nextLabel = 'Next', nextDisabled }: { onBack?: () => void; onNext: () => void; nextLabel?: string; nextDisabled?: boolean }) {
+  const t = useTheme();
+  return (
+    <Glass style={{ borderTopWidth: 1, borderColor: t.border }}>
+      <Row style={{ padding: 16, paddingBottom: 24, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
+        {onBack ? <Button kind="outline" icon="back" label="Back" onPress={onBack} style={{ flex: 1 }} /> : null}
+        <Button size="lg" label={nextLabel} disabled={nextDisabled} onPress={onNext} style={{ flex: 2 }} />
+      </Row>
+    </Glass>
   );
 }

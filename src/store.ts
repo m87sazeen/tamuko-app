@@ -17,6 +17,7 @@ export type Business = {
   country: string;
   template: Template;
   typeId?: string; // catalogue business type (street, cafe, laundry, …)
+  brandSet?: boolean; // owner set their own name or logo → their brand leads, tamuko shrinks to its mark
   features?: Features; // tools switched on for this business
   service: Service; // ways of serving, tables and the workflow for each
   railEnabled: boolean;
@@ -149,7 +150,8 @@ export type AuditEvent = { id: string; at: number; userId: string | null; action
 
 export type LocalUser = {
   id: string;
-  provider: 'google' | 'phone' | 'local';
+  provider: 'google' | 'phone' | 'local' | 'line';
+  lineId?: string;
   email?: string;
   phone?: string; // E.164
   name: string;
@@ -522,7 +524,7 @@ export const useApp = create<State & Actions>()(
 
       upsertUser: (u) => {
         const s = get();
-        const match = s.users.find((x) => (u.email && x.email === u.email) || (u.phone && x.phone === u.phone) || (u.provider === 'local' && x.provider === 'local'));
+        const match = s.users.find((x) => (u.email && x.email === u.email) || (u.phone && x.phone === u.phone) || (u.provider === 'local' && x.provider === 'local') || (!!u.lineId && x.lineId === u.lineId));
         // Security: once a device has an owner, unknown identities cannot sign in and read its data.
         // (Inviting staff needs the cloud tier, where the owner approves new members.)
         if (!match && s.users.length > 0) {

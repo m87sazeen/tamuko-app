@@ -63,6 +63,7 @@ export default function Sell() {
   const [weighing, setWeighing] = useState<CatalogItem | null>(null);
   const [scanning, setScanning] = useState(false);
   const [jobNote, setJobNote] = useState('');
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const [due, setDue] = useState<number | null>(null);
   const features = b.features ?? ALL_FEATURES;
   const placeOrder = useApp((s) => s.placeOrder);
@@ -118,6 +119,7 @@ export default function Sell() {
     setRedeem(false);
     setJobNote('');
     setDue(null);
+    setExtrasOpen(false);
   };
 
   const report = (r: { ok: boolean; error?: string; printed: string[] }) => setPrintMsg(r.ok ? (r.printed.length ? `Printed on ${r.printed.join(', ')}.` : '') : `${(r as any).error} The order is saved.`);
@@ -190,8 +192,14 @@ export default function Sell() {
     <View style={{ gap: 10 }}>
       {wide ? <H2>{t('newSale')}</H2> : null}
       {ModePicker}
-      {CustomerRow}
-      {JobPanel}
+      {extrasOpen || customer || jobNote || due ? (
+        <>
+          {CustomerRow}
+          {JobPanel}
+        </>
+      ) : (features.rewards || features.jobs) && lines.length > 0 ? (
+        <Button kind="ghost" size="sm" icon="plus" label={features.jobs ? 'Add customer or note' : 'Add customer'} onPress={() => setExtrasOpen(true)} />
+      ) : null}
       {lines.length === 0 && <Txt dim>Tap items to add them.</Txt>}
       {lines.map((l) => (
         <Row key={l.key} style={{ justifyContent: 'space-between' }}>
@@ -238,21 +246,21 @@ export default function Sell() {
     <View style={{ flex: 1, flexDirection: wide ? 'row' : 'column', backgroundColor: th.bg }}>
       <View style={{ flex: 1 }}>
         <View style={{ padding: 16, paddingBottom: 8, gap: 10 }}>
-          <Row gap={8} style={{ flexWrap: 'wrap' }}>
-            {unpaid.length > 0 && <Button kind="outline" size="sm" icon="receipt" label={`Open bills · ${unpaid.length}`} onPress={() => setBillsOpen(true)} />}
-            {lastSale && <Button kind="outline" size="sm" icon="print" label="Last receipt" onPress={() => setLastOpen(true)} />}
-            {features.barcode && nativePrinting && <Button kind="outline" size="sm" icon="scan" label="Scan" onPress={() => setScanning(true)} />}
-          </Row>
-          {!!printMsg && <Note tone={printMsg.startsWith('Printed') ? 'success' : 'warning'} text={printMsg} />}
+          {unpaid.length > 0 && <Button kind="outline" icon="receipt" label={`${unpaid.length} not paid yet · open bills`} onPress={() => setBillsOpen(true)} />}
+          {!!printMsg && <Note tone={printMsg.startsWith('Printed') || printMsg.startsWith('Added') ? 'success' : 'warning'} text={printMsg} />}
           {!wide && ModePicker}
-          <TextInput
-            accessibilityLabel={t('search')}
-            placeholder={`${t('search')}…`}
-            placeholderTextColor={th.textDim}
-            value={q}
-            onChangeText={setQ}
-            style={{ minHeight: 48, borderRadius: 999, backgroundColor: th.inset, paddingHorizontal: 20, fontSize: 17, color: th.text, borderWidth: 1, borderColor: th.border }}
-          />
+          <Row gap={8}>
+            <TextInput
+              accessibilityLabel={t('search')}
+              placeholder={`${t('search')}…`}
+              placeholderTextColor={th.textDim}
+              value={q}
+              onChangeText={setQ}
+              style={{ flex: 1, minHeight: 48, borderRadius: 999, backgroundColor: th.inset, paddingHorizontal: 20, fontSize: 17, color: th.text, borderWidth: 1, borderColor: th.border }}
+            />
+            {features.barcode && nativePrinting && <IconButton icon="scan" size={48} a11y="Scan a barcode" onPress={() => setScanning(true)} />}
+            {lastSale && <IconButton icon="print" size={48} a11y="Last receipt" onPress={() => setLastOpen(true)} />}
+          </Row>
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingBottom: 140 }}>
           {active.length === 0 && <Txt dim>No items. Add some in Manage → Items & stock.</Txt>}

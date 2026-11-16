@@ -18,6 +18,12 @@ const MAP = {
   document: ['document-text-linear'], scale: ['scale-linear'], tag: ['tag-price-linear'], monitor: ['monitor-linear'], cup: ['cup-hot-linear'], shop: ['shop-2-linear'],
   scissors: ['scissors-linear'], dumbbell: ['dumbbell-large-minimalistic-linear'], wallet: ['wallet-linear'], card: ['card-linear'], link: ['link-round-linear', 'link-linear'],
   tick: ['check-linear', 'check-read-linear'], delivery: ['delivery-linear'], hanger: ['hanger-2-linear'], refresh: ['refresh-linear'], bell: ['bell-linear'], eye: ['eye-linear'], tuning: ['tuning-2-linear'],
+  // business types
+  truck: ['truck-linear'], kiosk: ['shop-minimalistic-linear'], bottle: ['bottle-linear'], cake: ['cake-linear'], chefhat: ['chef-hat-linear'],
+  scooter: ['scooter-linear'], plate: ['plate-linear'], leaf: ['leaf-linear'], tshirt: ['t-shirt-linear'], perfume: ['perfume-linear'],
+  diamond: ['diamond-linear'], pill: ['pill-linear'], wrench: ['wrench-linear'], book: ['book-linear'], washer: ['washing-machine-linear'],
+  ruler: ['ruler-pen-linear'], car: ['car-linear'], wheel: ['wheel-linear'], paw: ['paw-linear'], broom: ['broom-linear'],
+  meditation: ['meditation-linear'], balloon: ['balloon-linear'], forkknife: ['fork-knife-linear'], laptop: ['laptop-linear'],
 };
 
 const out = {};

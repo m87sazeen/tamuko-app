@@ -1,5 +1,4 @@
-import * as ImageManipulator from 'expo-image-manipulator';
-import * as ImagePicker from 'expo-image-picker';
+import { pickImage } from '../images';
 import React, { useState } from 'react';
 import { Image, Switch, View , Linking } from 'react-native';
 import { Button, Card, Field, H2, Note, Pill, Row, Screen, Segmented, Sheet, Txt, PageHeader } from '../components/ui';
@@ -17,12 +16,6 @@ import { hashPin } from './Lock';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
-async function pickImage(size: number): Promise<string | null> {
-  const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, allowsEditing: true, aspect: [1, 1] });
-  if (r.canceled) return null;
-  const out = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: size } }], { compress: 0.8, format: ImageManipulator.SaveFormat.PNG, base64: true });
-  return out.base64 ? `data:image/png;base64,${out.base64}` : null;
-}
 
 function Toggle({ label, value, onChange, hint }: { label: string; value: boolean; onChange: (v: boolean) => void; hint?: string }) {
   const th = useTheme();
@@ -93,11 +86,11 @@ export default function Settings() {
       {/* Business & branding */}
       <Card style={{ gap: 12 }}>
         <H2>Business & branding</H2>
-        <Field label="Business name" value={b.name} onChange={(v) => s.updateBusiness({ name: clampText(v, 60) })} maxLength={60} />
+        <Field label="Business name" value={b.name} onChange={(v) => s.updateBusiness({ name: clampText(v, 60), brandSet: true })} maxLength={60} />
         <Row>
           {b.logo ? <Image source={{ uri: b.logo }} style={{ width: 64, height: 64, borderRadius: 12 }} accessibilityLabel="Business logo" /> : <View style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: th.inset, alignItems: 'center', justifyContent: 'center' }}><Txt dim>Logo</Txt></View>}
           <View style={{ flex: 1, gap: 8 }}>
-            <Button size="sm" kind="outline" label={b.logo ? 'Change logo' : 'Add logo'} onPress={async () => { const d = await pickImage(256); if (d) s.updateBusiness({ logo: d }); }} />
+            <Button size="sm" kind="outline" label={b.logo ? 'Change logo' : 'Add logo'} onPress={async () => { const d = await pickImage(256); if (d) s.updateBusiness({ logo: d, brandSet: true }); }} />
             {b.logo && <Button size="sm" kind="ghost" label="Remove logo" onPress={() => s.updateBusiness({ logo: null })} />}
           </View>
         </Row>

@@ -39,10 +39,10 @@ export type Sample = { name: string; price: number; unit?: Unit; options?: { nam
 
 export type CategoryId = 'food' | 'retail' | 'services' | 'active';
 export const CATEGORIES: { id: CategoryId; label: string; icon: IconName }[] = [
-  { id: 'food', label: 'Food & drink', icon: 'flame' },
+  { id: 'food', label: 'Food & drink', icon: 'forkknife' },
   { id: 'retail', label: 'Shops', icon: 'bag' },
-  { id: 'services', label: 'Services', icon: 'settings' },
-  { id: 'active', label: 'Fitness & activities', icon: 'users' },
+  { id: 'services', label: 'Services', icon: 'wrench' },
+  { id: 'active', label: 'Fitness & activities', icon: 'dumbbell' },
 ];
 
 export type BizType = {
@@ -145,3 +145,11 @@ export function stepsFor(t: BizType): Step[] | null {
   if (!t.steps) return null;
   return t.steps.map((name, i) => ({ name, kind: i === 0 ? 'order' : i === t.steps!.length - 1 ? 'done' : name === 'Paid' ? 'pay' : 'work' }));
 }
+
+/** Solar icon for each business type tile. */
+export const TYPE_ICON: Record<string, IconName> = {
+  street: 'flame', truck: 'truck', kiosk: 'kiosk', cafe: 'cup', juice: 'bottle', bakery: 'cake', restaurant: 'chefhat', cloud: 'scooter', catering: 'plate',
+  grocery: 'cart', produce: 'leaf', fashion: 'tshirt', electronics: 'phone', beauty: 'perfume', jewellery: 'diamond', pharmacy: 'pill', hardware: 'wrench', books: 'book',
+  laundry: 'washer', salon: 'scissors', repair: 'laptop', tailoring: 'ruler', carwash: 'car', garage: 'wheel', pet: 'paw', printing: 'print', cleaning: 'broom',
+  gym: 'dumbbell', studio: 'meditation', tutoring: 'book', play: 'balloon',
+};

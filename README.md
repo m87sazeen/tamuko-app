@@ -110,14 +110,13 @@ Manage → **Printers**:
 
 Bluetooth and Wi-Fi printing need the installed app (a development or release build), not Expo Go or the web.
 
-## SMS OTP — free options
+## Sign-in — all free
 
-Set `EXPO_PUBLIC_SMS_PROVIDER`:
-
-- `dev` (default): free, works offline. It makes a real single-use code but shows it in a "DEV SMS" banner instead of sending an SMS. For testing only.
-- `textbelt`: textbelt.com's free key (`textbelt`) allows **1 SMS per day**. Textbelt creates and checks the code on its own server. Buy a key for real volume.
-
-**Before launch:** no SMS service is both free and reliable at scale. Move OTP to your own backend, or to Firebase Auth / Supabase Auth with a paid SMS provider, so that verification issues a server-signed session.
+- **This device** — no account; always available.
+- **SMS or WhatsApp code** — through the self-hosted gateway in `server/` (SMS from your own Android phone; WhatsApp is unofficial and can get the number banned). Set `EXPO_PUBLIC_OTP_GATEWAY_URL`. See `server/README.md`.
+- **Google** — free OAuth client IDs (below).
+- **LINE** — free LINE Login channel; secret kept on the gateway (`EXPO_PUBLIC_LINE_CHANNEL_ID`).
+- Viber has no free business messaging, so it isn't offered.
 
 ## Google sign-in
 

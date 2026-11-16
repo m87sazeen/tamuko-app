@@ -6,6 +6,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { F } from './fonts';
+import { WORDMARK } from './wordmark';
 
 export type LogoVariant = 'charcoal' | 'cream' | 'peach' | 'steel' | 'black' | 'white';
 
@@ -39,20 +40,17 @@ export function Symbol({ size = 40, variant = 'charcoal', label }: { size?: numb
   );
 }
 
-/** Wordmark: proportions taken from the 190 px master (o = 0.858×, bar = 0.4× wide, 0.11× tall). */
+/** Wordmark — vector outlines of the original artwork (see scripts/gen-wordmark.cjs). `size` = cap size in px. */
 export function Wordmark({ size = 28, variant = 'charcoal' }: { size?: number; variant?: LogoVariant }) {
   const c = V[variant];
+  const k = size / 96;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', direction: 'ltr' }} accessible accessibilityRole="header" accessibilityLabel="tamuko">
-      <Text allowFontScaling={false} style={{ fontFamily: F.wordmark, fontSize: size, lineHeight: size * 1.1, letterSpacing: -size * 0.0126, color: c.ink, includeFontPadding: false }}>
-        tamuk
-      </Text>
-      <View style={{ alignItems: 'center', marginLeft: size * 0.03, paddingBottom: size * 0.1 }}>
-        <Text allowFontScaling={false} style={{ fontFamily: F.wordmark, fontSize: size * 0.858, lineHeight: size * 0.62, color: c.ink, includeFontPadding: false, paddingTop: size * 0.05 }}>
-          o
-        </Text>
-        <View style={{ width: size * 0.4, height: Math.max(2, size * 0.11), borderRadius: 99, backgroundColor: c.bar, marginTop: size * 0.068 }} />
-      </View>
+    <View accessible accessibilityRole="header" accessibilityLabel="tamuko" style={{ direction: 'ltr' }}>
+      <Svg width={WORDMARK.width * k} height={WORDMARK.height * k} viewBox={`0 0 ${WORDMARK.width} ${WORDMARK.height}`}>
+        <Path d={WORDMARK.tamuk} fill={c.ink} />
+        <Path d={WORDMARK.o} fill={c.ink} />
+        <Rect x={WORDMARK.bar.x} y={WORDMARK.bar.y} width={WORDMARK.bar.w} height={WORDMARK.bar.h} rx={WORDMARK.bar.r} fill={c.bar} />
+      </Svg>
     </View>
   );
 }

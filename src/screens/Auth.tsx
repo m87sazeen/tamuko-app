@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Challenge, checkOtp, onDevSms, requestOtp, smsProvider } from '../auth/otp';
+import { Challenge, Channel, checkOtp, gatewayChannels, onDevSms, requestOtp, smsProvider } from '../auth/otp';
+import { LineSignIn, lineConfigured } from '../auth/line';
 import { GoogleSignIn, googleConfigured } from '../auth/google';
 import { StackedLockup } from '../brand/Logo';
 import { Accent, Button, Card, Field, H1, Note, Row, Screen, Segmented, Sheet, Txt } from '../components/ui';
@@ -9,6 +10,7 @@ import { isE164, maskPhone, normalizePhone } from '../security';
 import { useApp } from '../store';
 import { useTheme } from '../theme';
 import { Legal } from './Legal';
+import { LanguageButton } from '../components/LanguageButton';
 
 export default function AuthScreen() {
   const t = useTheme();
@@ -17,8 +19,12 @@ export default function AuthScreen() {
   // "This device" needs no account: data stays on the phone and a PIN protects it.
   const phoneReady = __DEV__ || smsProvider.id !== 'dev';
   const existingLocal = useApp((s) => s.users.find((u) => u.provider === 'local'));
-  const [mode, setMode] = useState<'device' | 'phone' | 'google'>(phoneReady && !existingLocal ? 'phone' : 'device');
-  const [ownerName, setOwnerName] = useState('');
+  const [mode, setMode] = useState<'device' | 'phone' | 'google' | 'line'>('device');
+  const [channel, setChannel] = useState<Channel>('sms');
+  const [waReady, setWaReady] = useState(false);
+  useEffect(() => {
+    if (smsProvider.id === 'gateway') gatewayChannels().then((c) => setWaReady(c.whatsapp)).catch(() => {});
+  }, []);
   const [legal, setLegal] = useState(false);
   const [cc, setCc] = useState('AE');
   const [pickCc, setPickCc] = useState(false);
@@ -47,7 +53,7 @@ export default function AuthScreen() {
     if (!isE164(phone)) return setErr('Enter a valid mobile number.');
     setBusy(true);
     try {
-      setCh(await requestOtp(phone));
+      setCh(await requestOtp(phone, 'tamuko', channel));
       setCode('');
     } catch (e: any) {
       setErr(e.message ?? 'Could not send the code.');
@@ -74,7 +80,10 @@ export default function AuthScreen() {
   const expiresIn = ch ? Math.max(0, Math.floor((ch.expiresAt - now) / 1000)) : 0;
 
   return (
-    <Screen style={{ maxWidth: 480, paddingTop: 48 }}>
+    <Screen style={{ maxWidth: 480, paddingTop: 16 }}>
+      <View style={{ alignItems: 'flex-end' }}>
+        <LanguageButton />
+      </View>
       <View style={{ alignItems: 'center', gap: 16, marginBottom: 8 }}>
         <StackedLockup height={76} variant={t.dark ? 'charcoal' : 'cream'} />
         <View style={{ alignItems: 'center' }}>
@@ -91,28 +100,27 @@ export default function AuthScreen() {
       )}
 
       <Card style={{ gap: 16 }}>
-        <H1>Sign in or sign up</H1>
-        {(phoneReady || googleConfigured) && <Segmented
+        {(phoneReady || googleConfigured || lineConfigured) && <H1>Sign in or sign up</H1>}
+        {(phoneReady || googleConfigured || lineConfigured) && <Segmented
           value={mode}
           onChange={(v) => { setMode(v); setErr(''); }}
           options={[
-            ...(phoneReady ? [{ value: 'phone' as const, label: 'Mobile' }] : []),
-            ...(googleConfigured ? [{ value: 'google' as const, label: 'Gmail' }] : []),
             { value: 'device' as const, label: 'This device' },
+            ...(phoneReady ? [{ value: 'phone' as const, label: 'Mobile' }] : []),
+            ...(googleConfigured ? [{ value: 'google' as const, label: 'Google' }] : []),
+            ...(lineConfigured ? [{ value: 'line' as const, label: 'LINE' }] : []),
           ]}
         />}
 
         {mode === 'device' && (
           existingLocal ? (
             <>
-              <Txt>This device belongs to <Txt weight="700">{existingLocal.name}</Txt>.</Txt>
-              <Button size="lg" label={`Continue as ${existingLocal.name}`} onPress={() => { try { upsertUser({ provider: 'local', name: existingLocal.name }); } catch (e: any) { setErr(e.message); } }} />
+              <Button size="lg" label="Continue" onPress={() => { try { upsertUser({ provider: 'local', name: existingLocal.name }); } catch (e: any) { setErr(e.message); } }} />
             </>
           ) : (
             <>
-              <Txt dim>No account needed. Your business data stays on this phone or tablet. Set a PIN after setup so only you can open it, and make regular backups.</Txt>
-              <Field label="Your name" value={ownerName} onChange={setOwnerName} maxLength={40} placeholder="e.g. Sara" autoComplete="name" onSubmit={() => { if (ownerName.trim()) { try { upsertUser({ provider: 'local', name: ownerName.trim().slice(0, 40) }); } catch (e: any) { setErr(e.message); } } }} />
-              <Button size="lg" label="Start" disabled={!ownerName.trim()} onPress={() => { try { upsertUser({ provider: 'local', name: ownerName.trim().slice(0, 40) }); } catch (e: any) { setErr(e.message); } }} />
+              <Txt dim>No account needed. Everything stays on this device.</Txt>
+              <Button size="lg" label="Get started" onPress={() => { try { upsertUser({ provider: 'local', name: 'Owner' }); } catch (e: any) { setErr(e.message); } }} />
             </>
           )
         )}
@@ -126,7 +134,13 @@ export default function AuthScreen() {
               </Pressable>
             </View>
             <Field label="Mobile number" value={local} onChange={(s) => setLocal(s.replace(/[^\d+ ]/g, ''))} keyboard="phone-pad" placeholder="50 123 4567" maxLength={18} autoComplete="tel" onSubmit={send} />
-            <Button label="Send code" onPress={send} loading={busy} size="lg" />
+            {waReady && (
+              <>
+                <Txt size={14} weight="600">Send the code by</Txt>
+                <Segmented value={channel} onChange={setChannel} options={[{ value: 'sms', label: 'SMS' }, { value: 'whatsapp', label: 'WhatsApp' }]} />
+              </>
+            )}
+            <Button label={channel === 'whatsapp' ? 'Send code on WhatsApp' : 'Send code'} onPress={send} loading={busy} size="lg" />
             <Txt size={12} dim>We send a one-time 6-digit code by SMS. Standard SMS rates may apply. Provider: {smsProvider.label} ({smsProvider.free}).</Txt>
           </>
         )}
@@ -144,6 +158,21 @@ export default function AuthScreen() {
               <Button kind="ghost" size="sm" label="Change number" onPress={() => { setCh(null); setErr(''); }} />
               <Button kind="ghost" size="sm" label={resendIn ? `Resend in ${resendIn}s` : 'Resend code'} disabled={!!resendIn} onPress={send} />
             </Row>
+          </>
+        )}
+
+        {mode === 'line' && (
+          <>
+            <LineSignIn
+              onProfile={(p) => {
+                try {
+                  upsertUser({ provider: 'line', lineId: p.sub, email: p.email || undefined, name: p.name });
+                } catch (e: any) {
+                  setErr(e.message);
+                }
+              }}
+            />
+            <Txt size={12} dim>We only receive your LINE display name. We never see your LINE password.</Txt>
           </>
         )}
 

@@ -4,10 +4,10 @@
 //   Day       — open the day with a cash float, close it with a cash count
 //   Items     — menu, prices and stock
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Icon, IconName } from '../brand/Icon';
 import { FlowEditor, FlowPreview, PresetPicker, Stepper } from '../components/Workflow';
-import { Button, Card, Eyebrow, Field, H2, Note, Pill, Row, Screen, Segmented, Stat, Tick, Txt, PageHeader } from '../components/ui';
+import { Button, Card, Field, H2, Note, Pill, Row, Screen, Segmented, Stat, Tick, Txt, PageHeader, FadeIn } from '../components/ui';
 import { countryOf, formatMoney, parseMoney } from '../money';
 import { ManageView, useNav } from '../nav';
 import { isOpen, isUnpaid, paidBy, useApp } from '../store';
@@ -22,6 +22,14 @@ import { ALL_FEATURES, FEATURE_INFO, Features, typeById } from '../catalogue';
 
 export default function Manage() {
   const view = useNav((s) => s.view);
+  return (
+    <FadeIn key={view} style={{ flex: 1 }} distance={6}>
+      <ManageView_ view={view} />
+    </FadeIn>
+  );
+}
+
+function ManageView_({ view }: { view: ManageView }) {
   const go = useNav((s) => s.go);
   const open = (v: ManageView) => go('manage', v);
   if (view === 'workflow') return <WorkflowPage onBack={() => open('home')} />;
@@ -50,48 +58,34 @@ function Home({ open }: { open: (v: ManageView) => void }) {
   const s = useApp();
   const b = s.business!;
   const day = useOpenDay();
-  const unpaid = s.tickets.filter(isUnpaid).length;
-  const onRail = s.tickets.filter(isOpen).length;
   const low = s.items.filter((i) => i.active && i.stock != null && i.stock <= (i.lowAt ?? 0)).length + s.ingredients.filter((g) => g.stock <= g.lowAt).length;
-  const today = new Date().toDateString();
-  const soldToday = s.sales.some((x) => new Date(x.createdAt).toDateString() === today);
   const rewardsReady = s.customers.filter((x) => b.rewards?.enabled && x.stamps >= b.rewards.every).length;
   const f = b.features ?? ALL_FEATURES;
   const todayStart = new Date(new Date().toDateString()).getTime();
   const bookedToday = s.bookings.filter((x) => x.status === 'booked' && x.at >= todayStart && x.at < todayStart + 86_400_000).length;
 
-  // The business journey, start to finish. Each step links to where it happens.
-  const routine: { icon: IconName; label: string; done: boolean; onPress: () => void }[] = [
-    { icon: 'sun', label: 'Open the day', done: !!day, onPress: () => open('day') },
-    { icon: 'bag', label: 'Take orders', done: soldToday, onPress: () => go('sell') },
-    ...(b.railEnabled ? [{ icon: 'rail' as IconName, label: 'Prepare & hand over', done: soldToday && onRail === 0, onPress: () => go('rail') }] : []),
-    { icon: 'cash', label: 'Get paid', done: soldToday && unpaid === 0, onPress: () => go('sell') },
-    { icon: 'moon', label: 'Close the day', done: false, onPress: () => open('day') },
-    { icon: 'chart', label: 'Review', done: false, onPress: () => go('reports') },
-  ];
-
+  // Only the next three things to do — no long checklist.
   const checklist: { label: string; done: boolean; onPress: () => void }[] = [
-    { label: 'Business name and country', done: !!b.name, onPress: () => go('settings') },
-    { label: 'Check your workflow and tables', done: !b.railEnabled || s.audit.some((a) => a.action === 'workflow.update'), onPress: () => open('workflow') },
-    { label: 'At least 3 items with prices', done: s.items.length >= 3, onPress: () => open('items') },
-    { label: 'Logo on receipts', done: !!b.logo, onPress: () => go('settings') },
-    { label: 'Payment QR', done: !!(b.qrImage || b.qrPayload), onPress: () => go('settings') },
-    { label: `${b.tax.name || 'Tax'} registration number`, done: !b.tax.enabled || !!b.tax.registrationNo, onPress: () => go('settings') },
-    { label: 'Device PIN', done: !!s.pin, onPress: () => go('settings') },
-    { label: 'Connect a receipt printer (optional)', done: s.printers.length > 0, onPress: () => open('printers') },
-    { label: 'First sale', done: s.sales.length > 0, onPress: () => go('sell') },
-    { label: 'First backup', done: !!s.settings.lastBackupAt, onPress: () => go('settings') },
+    { label: 'Add your logo and business name', done: !!b.brandSet, onPress: () => go('settings') },
+    { label: 'Check your items and prices', done: s.audit.some((x) => x.action.startsWith('catalog.')) && s.items.length > 0 && s.sales.length > 0, onPress: () => open('items') },
+    { label: 'Add your payment QR', done: !!(b.qrImage || b.qrPayload), onPress: () => go('settings') },
+    { label: 'Make your first sale', done: s.sales.length > 0, onPress: () => go('sell') },
+    { label: 'Set a PIN to lock the app', done: !!s.pin, onPress: () => go('settings') },
+    { label: 'Back up your data', done: !!s.settings.lastBackupAt, onPress: () => go('settings') },
   ];
+  const next = checklist.filter((x) => !x.done).slice(0, 3);
   const doneCount = checklist.filter((x) => x.done).length;
 
   const tile = (icon: IconName, title: string, sub: string, onPress: () => void, badge?: { tone: 'warning' | 'pending' | 'info' | 'success'; text: string }) => (
-    <Card key={title} onPress={onPress} a11y={`${title}. ${sub}`} style={{ flexBasis: 240, flexGrow: 1, gap: 6 }}>
+    <Card key={title} onPress={onPress} a11y={`${title}. ${sub}`} style={{ flexBasis: 160, flexGrow: 1, gap: 8, minHeight: 120 }}>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Icon name={icon} size={24} color={th.text} />
+        <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: th.inset }}>
+          <Icon name={icon} size={22} color={th.text} />
+        </View>
         {badge ? <Pill tone={badge.tone} text={badge.text} /> : null}
       </Row>
-      <Txt size={17} weight="800" heading>{title}</Txt>
-      <Txt size={14} dim>{sub}</Txt>
+      <Txt size={16} weight="800" heading>{title}</Txt>
+      <Txt size={13} dim numberOfLines={2}>{sub}</Txt>
     </Card>
   );
 
@@ -99,53 +93,43 @@ function Home({ open }: { open: (v: ManageView) => void }) {
     <Screen>
       <PageHeader kicker={b.name} title="Manage" />
 
-      <Card style={{ gap: 12 }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <H2 size={18}>Your day</H2>
-          <Eyebrow live={!!day} text={day ? 'Day open' : 'Day not open'} />
+      <Card onPress={() => open('day')} a11y={day ? 'Close the day' : 'Open the day'} style={{ padding: 16 }}>
+        <Row gap={12}>
+          <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: day ? th.primary : th.inset }}>
+            <Icon name={day ? 'moon' : 'sun'} size={24} color={day ? th.onPrimary : th.text} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Txt weight="700">{day ? 'Close the day' : 'Open the day'}</Txt>
+            <Txt size={13} dim>{day ? 'Count the cash and see the difference.' : 'Start with the cash in the drawer.'}</Txt>
+          </View>
+          <Icon name="forward" size={20} color={th.textDim} />
         </Row>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {routine.map((r, i) => (
-            <Button key={r.label} size="sm" kind={r.done ? 'secondary' : 'outline'} icon={r.done ? 'check' : r.icon} label={`${i + 1}. ${r.label}`} onPress={r.onPress} />
-          ))}
-        </View>
       </Card>
 
-      {doneCount < checklist.length && (
-        <Card style={{ gap: 10 }}>
+      {next.length > 0 && (
+        <Card style={{ gap: 8 }}>
           <Row style={{ justifyContent: 'space-between' }}>
-            <H2 size={18}>Getting started</H2>
-            <Txt mono weight="700">{doneCount}/{checklist.length}</Txt>
+            <H2 size={18}>Next steps</H2>
+            <Txt size={13} dim mono>{doneCount}/{checklist.length}</Txt>
           </Row>
-          <View style={{ height: 8, borderRadius: 99, backgroundColor: th.inset }}>
-            <View style={{ width: `${(doneCount / checklist.length) * 100}%`, height: 8, borderRadius: 99, backgroundColor: th.primary }} />
-          </View>
-          {checklist.map((c) => (
-            <Card key={c.label} onPress={c.onPress} a11y={`${c.label}${c.done ? ', done' : ''}`} style={{ padding: 14, borderRadius: 14, backgroundColor: th.surface, boxShadow: 'none', shadowOpacity: 0, elevation: 0 } as any}>
-              <Row gap={10}>
-                <Tick on={c.done} />
-                <Txt style={{ flex: 1 }} weight={c.done ? '400' : '600'} dim={c.done}>{c.label}</Txt>
-                <Icon name="forward" size={18} color={th.textDim} />
-              </Row>
-            </Card>
+          {next.map((c) => (
+            <Pressable key={c.label} accessibilityRole="button" onPress={c.onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingHorizontal: 4, opacity: pressed ? 0.7 : 1 })}>
+              <Tick on={false} />
+              <Txt weight="600" style={{ flex: 1 }}>{c.label}</Txt>
+              <Icon name="forward" size={18} color={th.textDim} />
+            </Pressable>
           ))}
         </Card>
       )}
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        {tile('sun', day ? 'Close the day' : 'Open the day', day ? 'Count the cash and see the difference.' : 'Start with the cash in the drawer.', () => open('day'), day ? { tone: 'success', text: 'Open' } : undefined)}
-        {b.railEnabled && tile('rail', 'Workflow', activeModes(b.service).map((m) => modeLabel(m, b.template)).join(' · ') + (b.service.tables.length ? ` · ${b.service.tables.length} tables` : ''), () => open('workflow'))}
-        {tile('list', 'Items & stock', `${s.items.length} items · options, recipes, stock`, () => open('items'), low ? { tone: 'warning', text: `${low} low` } : undefined)}
-        {f.bookings && tile('calendar', 'Bookings & queue', bookedToday ? `${bookedToday} booked today` : 'Appointments, classes and walk-ins.', () => open('bookings'), bookedToday ? { tone: 'pending', text: String(bookedToday) } : undefined)}
-        {f.recipes && tile('box', 'Ingredients', s.ingredients.length ? `${s.ingredients.length} ingredients · real cost per item` : 'Track ingredients and food cost.', () => open('ingredients'))}
-        {(f.rewards || f.jobs) && tile('star', 'Customers & rewards', b.rewards?.enabled ? `Stamp card on · ${s.customers.length} customers` : '“Buy 10, get 1 free” in plain words.', () => open('customers'), rewardsReady ? { tone: 'success', text: `${rewardsReady} ready` } : undefined)}
-        {tile('print', 'Printers', s.printers.length ? s.printers.map((x) => x.name).join(', ') : 'Bluetooth, Wi-Fi or AirPrint receipts and kitchen tickets.', () => open('printers'))}
-        {tile('receipt', 'Open bills', unpaid ? 'Orders waiting for payment.' : 'Everything is paid.', () => go('sell'), unpaid ? { tone: 'pending', text: String(unpaid) } : undefined)}
-        {tile('cash', 'Expenses', 'Log rent, stock and wages to see real profit.', () => go('reports'))}
-        {tile('tuning', 'Business type & tools', `${typeById(b.typeId ?? '')?.label ?? 'Your business'} · switch tools on or off`, () => open('features'))}
-        {tile('settings', 'Branding & payments', 'Logo, payment QR, tax, USD for tourists.', () => go('settings'))}
-        {tile('users', 'Team', 'Staff logins and roles arrive with cloud sync.', () => {}, { tone: 'info', text: 'Soon' })}
-        {tile('globe', 'Branches & online orders', 'Multi-branch, suppliers and QR ordering arrive with cloud sync.', () => {}, { tone: 'info', text: 'Soon' })}
+        {tile('list', 'Items', `${s.items.length} items`, () => open('items'), low ? { tone: 'warning', text: `${low} low` } : undefined)}
+        {b.railEnabled && tile('rail', 'Workflow', b.service.tables.length ? `${b.service.tables.length} tables` : 'Your order steps', () => open('workflow'))}
+        {f.bookings && tile('calendar', 'Bookings', bookedToday ? `${bookedToday} today` : 'Appointments & walk-ins', () => open('bookings'), bookedToday ? { tone: 'pending', text: String(bookedToday) } : undefined)}
+        {(f.rewards || f.jobs) && tile('star', 'Customers', `${s.customers.length} customers`, () => open('customers'), rewardsReady ? { tone: 'success', text: `${rewardsReady} ready` } : undefined)}
+        {f.recipes && tile('box', 'Ingredients', 'Cost per item', () => open('ingredients'))}
+        {tile('print', 'Printers', s.printers.length ? s.printers.map((x) => x.name).join(', ') : 'Receipts & tickets', () => open('printers'))}
+        {tile('tuning', 'Tools', 'Switch features on or off', () => open('features'))}
       </View>
     </Screen>
   );

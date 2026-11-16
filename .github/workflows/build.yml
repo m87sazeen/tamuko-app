@@ -1,0 +1,32 @@
+# One click → installable builds for iPhone/iPad and Android on Expo's EAS Build (free tier).
+# Setup once: create an access token at expo.dev → Account settings → Access tokens and add it to this
+# repository as the secret EXPO_TOKEN (Settings → Secrets and variables → Actions).
+name: Build iOS & Android
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'EAS build profile'
+        type: choice
+        options: [preview, production]
+        default: preview
+      platform:
+        description: 'Platform'
+        type: choice
+        options: [all, android, ios]
+        default: all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - run: eas build --profile ${{ inputs.profile }} --platform ${{ inputs.platform }} --non-interactive --no-wait

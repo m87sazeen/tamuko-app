@@ -1,0 +1,16 @@
+{
+  "name": "tamuko-sign-in-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free, self-hosted sign-in gateway for tamuko: one-time codes by SMS (your own Android phone) or WhatsApp, and Sign in with LINE.",
+  "license": "MIT",
+  "main": "index.js",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "6.7.24",
+    "qrcode-terminal": "0.12.0"
+  }
+}

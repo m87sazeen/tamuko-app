@@ -6,8 +6,9 @@ import { AppState, Platform, Pressable, View, useWindowDimensions } from 'react-
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CORE_FONTS, useScriptFont } from './src/brand/fonts';
 import { Icon, IconName } from './src/brand/Icon';
-import { StackedLockup } from './src/brand/Logo';
-import { Button, Glass, Logo, Pill, Txt } from './src/components/ui';
+import { StackedLockup, Symbol } from './src/brand/Logo';
+import { BusinessBadge } from './src/components/BusinessBadge';
+import { Button, FadeIn, Glass, Logo, Pill, Row, Txt } from './src/components/ui';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { useT } from './src/i18n';
 import AuthScreen from './src/screens/Auth';
@@ -95,22 +96,55 @@ function Shell() {
       {wide && (
         <View style={{ width: 232, padding: 16, paddingTop: 20, gap: 6, borderRightWidth: 1, borderColor: th.border, backgroundColor: th.surface }}>
           <View style={{ paddingHorizontal: 6, paddingBottom: 18, gap: 6 }}>
-            <Logo size={30} product={PRODUCT[tab]} />
-            <Txt size={13} dim numberOfLines={1}>{b.name}</Txt>
+            {b.brandSet ? (
+              <Row gap={10}>
+                <BusinessBadge name={b.name} logo={b.logo} size={40} />
+                <View style={{ flex: 1 }}>
+                  <Txt size={16} weight="800" heading numberOfLines={2}>{b.name}</Txt>
+                  {PRODUCT[tab] ? <Txt size={12} dim>{PRODUCT[tab]}</Txt> : null}
+                </View>
+              </Row>
+            ) : (
+              <>
+                <Logo size={30} product={PRODUCT[tab]} />
+                <Txt size={13} dim numberOfLines={1}>{b.name}</Txt>
+              </>
+            )}
           </View>
           {tabs.map(navItem)}
           <View style={{ flex: 1 }} />
-          <Pill tone="info" text="On this device only" />
+          {b.brandSet ? (
+            <Row gap={8}>
+              <Symbol size={18} variant={th.dark ? 'charcoal' : 'cream'} label="tamuko" />
+              <Txt size={12} dim>powered by tamuko</Txt>
+            </Row>
+          ) : (
+            <Pill tone="info" text="On this device only" />
+          )}
         </View>
       )}
       <View style={{ flex: 1 }}>
         {!wide && (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderColor: th.border }}>
-            <Logo size={22} product={PRODUCT[tab]} />
-            <Txt size={13} dim numberOfLines={1} style={{ maxWidth: '45%' }}>{b.name}</Txt>
+            {b.brandSet ? (
+              <>
+                <Row gap={10} style={{ flex: 1 }}>
+                  <BusinessBadge name={b.name} logo={b.logo} size={32} />
+                  <Txt size={17} weight="800" heading numberOfLines={1} style={{ flex: 1 }}>{b.name}</Txt>
+                </Row>
+                <Symbol size={24} variant={th.dark ? 'charcoal' : 'cream'} label="tamuko" />
+              </>
+            ) : (
+              <>
+                <Logo size={22} product={PRODUCT[tab]} />
+                <Txt size={13} dim numberOfLines={1} style={{ maxWidth: '45%' }}>{b.name}</Txt>
+              </>
+            )}
           </View>
         )}
-        <Screen />
+        <FadeIn key={tab} style={{ flex: 1 }} distance={6}>
+          <Screen />
+        </FadeIn>
       </View>
       {!wide && (
         <Glass style={{ borderTopWidth: 1, borderColor: th.border }}>

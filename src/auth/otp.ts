@@ -6,7 +6,10 @@
 //               generated AND verified on Textbelt's server, so it never touches this device.
 //               Buy a key for more volume; set EXPO_PUBLIC_TEXTBELT_KEY.
 //
-// Choose with EXPO_PUBLIC_SMS_PROVIDER=dev|textbelt (default: dev).
+//   gateway   — FREE and self-hosted: the open-source tamuko sign-in gateway in /server sends codes by
+//               SMS from your own Android phone, or by WhatsApp (unofficial). Set EXPO_PUBLIC_OTP_GATEWAY_URL.
+//
+// Choose with EXPO_PUBLIC_SMS_PROVIDER=dev|textbelt|gateway (default: gateway when a URL is set, else dev).
 // Production path: move OTP to your own backend (or Firebase Auth / Supabase Auth) so verification
 // issues a server-signed session — client-side checks alone are not a security boundary.
 import { RateLimiter, newId, otpCode, randomSalt, safeEqual, sha256 } from '../security';
@@ -18,14 +21,15 @@ const MAX_VERIFY_ATTEMPTS = 5;
 const sendLimiter = new RateLimiter(3, 15 * 60_000); // 3 sends / 15 min / phone
 const failLimiter = new RateLimiter(10, 60 * 60_000); // 10 failed checks / hour / phone → lockout
 
-export type Challenge = { id: string; phone: string; expiresAt: number; resendAt: number };
+export type Channel = 'sms' | 'whatsapp';
+export type Challenge = { id: string; phone: string; expiresAt: number; resendAt: number; channel?: Channel };
 export type VerifyResult = { ok: true } | { ok: false; reason: string };
 
 export interface SmsOtpProvider {
   id: string;
   label: string;
   free: string;
-  send(phone: string, appName: string): Promise<Challenge>;
+  send(phone: string, appName: string, channel?: Channel): Promise<Challenge>;
   verify(challenge: Challenge, code: string): Promise<VerifyResult>;
 }
 
@@ -119,14 +123,58 @@ const textbeltProvider: SmsOtpProvider = {
   },
 };
 
-const PROVIDERS: Record<string, SmsOtpProvider> = { dev: devProvider, textbelt: textbeltProvider };
-export const smsProvider: SmsOtpProvider = PROVIDERS[process.env.EXPO_PUBLIC_SMS_PROVIDER ?? 'dev'] ?? devProvider;
+// ---------- self-hosted gateway provider (server/) ----------
+export const GATEWAY = (process.env.EXPO_PUBLIC_OTP_GATEWAY_URL || '').replace(/\/$/, '');
+
+async function post(path: string, body: object) {
+  const res = await fetch(`${GATEWAY}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  return { status: res.status, json };
+}
+
+const gatewayProvider: SmsOtpProvider = {
+  id: 'gateway',
+  label: 'tamuko sign-in gateway',
+  free: 'Free · self-hosted',
+  async send(phone, _appName, channel = 'sms') {
+    let r;
+    try {
+      r = await post('/otp/send', { phone, channel });
+    } catch {
+      throw new Error('Could not reach the sign-in service. Check your internet and try again.');
+    }
+    if (r.status !== 200) throw new Error(r.json.error || 'The code could not be sent. Try again.');
+    return { id: r.json.id, phone, expiresAt: r.json.expiresAt, resendAt: r.json.resendAt, channel };
+  },
+  async verify(ch, code) {
+    try {
+      const r = await post('/otp/verify', { id: ch.id, phone: ch.phone, code });
+      return r.json.ok ? { ok: true } : { ok: false, reason: r.json.reason || 'Wrong or expired code.' };
+    } catch {
+      return { ok: false, reason: 'Could not reach the sign-in service. Try again.' };
+    }
+  },
+};
+
+/** Which channels the gateway can use right now (WhatsApp may be reconnecting). */
+export async function gatewayChannels(): Promise<{ sms: boolean; whatsapp: boolean; line: boolean }> {
+  if (!GATEWAY) return { sms: false, whatsapp: false, line: false };
+  try {
+    const r = await fetch(`${GATEWAY}/health`).then((x) => x.json());
+    return { sms: !!r.channels?.sms, whatsapp: !!r.channels?.whatsapp, line: !!r.channels?.line };
+  } catch {
+    return { sms: false, whatsapp: false, line: false };
+  }
+}
+
+const PROVIDERS: Record<string, SmsOtpProvider> = { dev: devProvider, textbelt: textbeltProvider, gateway: gatewayProvider };
+export const smsProvider: SmsOtpProvider = PROVIDERS[process.env.EXPO_PUBLIC_SMS_PROVIDER ?? (GATEWAY ? 'gateway' : 'dev')] ?? (GATEWAY ? gatewayProvider : devProvider);
 
 /** Rate-limited entry points used by the UI. */
-export async function requestOtp(phone: string, appName = 'tamuko'): Promise<Challenge> {
+export async function requestOtp(phone: string, appName = 'tamuko', channel: Channel = 'sms'): Promise<Challenge> {
   const r = sendLimiter.check(phone);
   if (!r.ok) throw new Error(`Too many codes requested. Try again in ${Math.ceil(r.retryInMs / 60000)} min.`);
-  return smsProvider.send(phone, appName);
+  return smsProvider.send(phone, appName, channel);
 }
 
 export async function checkOtp(ch: Challenge, code: string): Promise<VerifyResult> {
