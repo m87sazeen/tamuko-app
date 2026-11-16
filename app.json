@@ -1,0 +1,130 @@
+{
+  "expo": {
+    "name": "tamuko",
+    "slug": "tamuko",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tamuko.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Choose your business logo and payment QR image.",
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": [
+          "en",
+          "ar",
+          "fa",
+          "tr",
+          "ru",
+          "ur",
+          "hi",
+          "bn",
+          "ta",
+          "si",
+          "ne",
+          "th",
+          "vi",
+          "id",
+          "ms",
+          "fil",
+          "km",
+          "lo",
+          "my",
+          "zh-Hans",
+          "zh-Hant",
+          "ja",
+          "ko"
+        ],
+        "NSLocalNetworkUsageDescription": "tamuko prints receipts on Wi-Fi printers on your network.",
+        "NSBluetoothAlwaysUsageDescription": "tamuko connects to your Bluetooth receipt printer.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FF8254",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.tamuko.app",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "versionCode": 1,
+      "permissions": [],
+      "allowBackup": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "tamuko",
+      "shortName": "tamuko",
+      "themeColor": "#FF8254",
+      "backgroundColor": "#EADFC7",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-sharing",
+      "expo-web-browser",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose your business logo and payment QR image.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#EADFC7",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#1F1F21"
+          }
+        }
+      ],
+      [
+        "expo-localization",
+        {
+          "supportsRTL": true
+        }
+      ],
+      "expo-font",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "neverForLocation": true,
+          "modes": [],
+          "bluetoothAlwaysPermission": "tamuko connects to your Bluetooth receipt printer."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "tamuko uses the camera to scan product barcodes. Nothing is recorded.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ],
+    "scheme": "tamuko",
+    "backgroundColor": "#EADFC7",
+    "extra": {
+      "supportsRTL": true
+    }
+  }
+}
