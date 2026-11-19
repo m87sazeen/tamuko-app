@@ -145,3 +145,10 @@ Bluetooth and Wi-Fi printing need the installed app (a development or release bu
 - Tax rates are 2026 defaults, editable per business. They are not tax advice. Pushing updated rates remotely (`COUNTRY_PACK_VERSION`) needs the cloud backend.
 - Printing uses the system print dialog (AirPrint / Android print service / browser). Direct Bluetooth ESC/POS printing for 58 mm printers needs a native module in a development build.
 - Navigation is a custom tab shell. It can move to Expo Router once deep-link routes (such as hosted ordering) are needed.
+
+## Finance & accounting
+
+- **Reports → Overview**: a plain-language story of your money (Fact / Estimate / Pending labels, evidence on tap), where the money is (cash, bank, waiting to settle, tax owed) and this month's profit and EBITDA.
+- **Open accounting** (owners): double-entry journal, general ledger, profit & loss, balance sheet, cash flow, trial balance, guided entries (owner money in/out, loans, equipment, depreciation, bank deposits, QR settlement, supplier bills, tax payments), custom journals, draft → post → reverse, and period locks.
+- Sales, voids, expenses and day-close differences post automatically. QR/link payments sit in *waiting to settle* until you record them arriving in the bank.
+- Tests: `npm run test:accounting`. Gap analysis vs the TNDL spec: [docs/TNDL-GAP-ANALYSIS.md](docs/TNDL-GAP-ANALYSIS.md).

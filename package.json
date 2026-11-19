@@ -65,7 +65,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test:accounting": "node --no-warnings --test src/accounting/*.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "private": true
 }

@@ -8,6 +8,7 @@ import { computeTax } from './money';
 import { newId } from './security';
 import { ServiceMode, Service, Step, Template, clone, defaultService, doneIndex, legacySteps, migrateTemplate, payIndex, paysFirst } from './workflow';
 import { ALL_FEATURES, Features, Unit } from './catalogue';
+import { type Entry, type Line, isLocked, validate } from './accounting/ledger.ts';
 
 export type { Template } from './workflow';
 export { TEMPLATES } from './workflow';
@@ -170,6 +171,7 @@ type State = {
   tickets: Ticket[];
   expenses: Expense[];
   days: DayRecord[];
+  journals: Entry[]; // manual journal entries (derived entries are rebuilt from sales/expenses/days)
   ingredients: Ingredient[];
   customers: Customer[];
   printers: Printer[];
@@ -179,11 +181,16 @@ type State = {
   currentUserId: string | null;
   pin: { hash: string; salt: string } | null;
   counters: { receiptSeq: number; tokenDay: string; tokenSeq: number };
-  settings: { language: string; themeMode: 'system' | 'light' | 'dark'; reportLevel: ReportLevel; reduceMotion: boolean; lastBackupAt: number | null; autoLockMin: number };
+  settings: { language: string; themeMode: 'system' | 'light' | 'dark'; reportLevel: ReportLevel; reduceMotion: boolean; lastBackupAt: number | null; autoLockMin: number; lockedThrough?: number | null };
 };
 
 type Actions = {
   log: (action: string, detail?: string) => void;
+  saveJournal: (j: { id?: string; date: number; memo: string; lines: Line[] }) => string | null;
+  postJournal: (id: string) => string | null;
+  reverseJournal: (id: string, reason: string) => string | null;
+  deleteDraft: (id: string) => void;
+  setLock: (through: number | null) => void;
   setBusiness: (b: Business) => void;
   updateBusiness: (patch: Partial<Business>) => void;
   addItem: (name: string, priceMinor: number, category?: string) => void;
@@ -230,6 +237,7 @@ const initial: State = {
   tickets: [],
   expenses: [],
   days: [],
+  journals: [],
   ingredients: [],
   customers: [],
   printers: [],
@@ -242,7 +250,7 @@ const initial: State = {
   settings: { language: '', themeMode: 'system', reportLevel: 'simple', reduceMotion: false, lastBackupAt: null, autoLockMin: 5 },
 };
 
-export const PERSIST_KEYS = ['business', 'items', 'sales', 'tickets', 'expenses', 'days', 'ingredients', 'customers', 'printers', 'bookings', 'audit', 'users', 'counters', 'settings'] as const;
+export const PERSIST_KEYS = ['business', 'items', 'sales', 'tickets', 'expenses', 'days', 'journals', 'ingredients', 'customers', 'printers', 'bookings', 'audit', 'users', 'counters', 'settings'] as const;
 
 /** How much of a sale was paid by each method (split payments count per part). */
 export function paidBy(s: Sale): Record<'cash' | 'qr' | 'link', number> {
@@ -513,11 +521,63 @@ export const useApp = create<State & Actions>()(
         get().log('ticket.recall', id);
       },
 
+      // ---------- accounting (owner only; posted entries are never edited, only reversed) ----------
+      saveJournal: (j) => {
+        const s = get();
+        if (s.users.find((u) => u.id === s.currentUserId)?.role !== 'owner') return 'Only the owner can enter journals.';
+        if (isLocked(j.date, s.settings.lockedThrough)) return 'That date is in a locked period.';
+        const existing = j.id ? s.journals.find((x) => x.id === j.id) : null;
+        if (existing && existing.status !== 'draft') return 'Posted entries cannot be edited. Reverse it instead.';
+        const id = existing?.id ?? `manual:${newId()}`;
+        const entry: Entry = { id, date: j.date, memo: j.memo.trim().slice(0, 140), lines: j.lines.filter((l) => l.debit || l.credit).map((l) => ({ ...l })), source: { kind: 'manual', id }, status: 'draft', createdBy: s.currentUserId };
+        set({ journals: existing ? s.journals.map((x) => (x.id === id ? entry : x)) : [entry, ...s.journals] });
+        get().log('journal.save', id);
+        return null;
+      },
+      postJournal: (id) => {
+        const s = get();
+        if (s.users.find((u) => u.id === s.currentUserId)?.role !== 'owner') return 'Only the owner can post journals.';
+        const j = s.journals.find((x) => x.id === id);
+        if (!j || j.status !== 'draft') return 'Only drafts can be posted.';
+        if (isLocked(j.date, s.settings.lockedThrough)) return 'That date is in a locked period.';
+        const problems = validate(j);
+        if (problems.length) return problems[0];
+        set({ journals: s.journals.map((x) => (x.id === id ? { ...x, status: 'posted' } : x)) });
+        get().log('journal.post', id);
+        return null;
+      },
+      reverseJournal: (id, reason) => {
+        const s = get();
+        if (s.users.find((u) => u.id === s.currentUserId)?.role !== 'owner') return 'Only the owner can reverse journals.';
+        const j = s.journals.find((x) => x.id === id);
+        if (!j || j.status !== 'posted' || j.reversedBy || j.reversalOf) return 'This entry cannot be reversed.';
+        const now = Date.now();
+        if (isLocked(now, s.settings.lockedThrough)) return 'Today is in a locked period.';
+        const rid = `manual:${newId()}`;
+        const rev: Entry = { id: rid, date: now, memo: `Reversal: ${j.memo}${reason ? ` — ${reason.slice(0, 80)}` : ''}`, lines: j.lines.map((l) => ({ account: l.account, debit: l.credit, credit: l.debit, memo: l.memo })), source: { kind: 'reversal', id: j.id }, status: 'posted', reversalOf: j.id, createdBy: s.currentUserId };
+        set({ journals: [rev, ...s.journals.map((x) => (x.id === id ? { ...x, reversedBy: rid } : x))] });
+        get().log('journal.reverse', `${id}: ${reason}`);
+        return null;
+      },
+      deleteDraft: (id) => {
+        set((s) => ({ journals: s.journals.filter((x) => !(x.id === id && x.status === 'draft')) }));
+        get().log('journal.delete_draft', id);
+      },
+      setLock: (through) => {
+        const s = get();
+        if (s.users.find((u) => u.id === s.currentUserId)?.role !== 'owner') return;
+        set({ settings: { ...s.settings, lockedThrough: through } });
+        get().log('period.lock', through ? new Date(through).toISOString().slice(0, 10) : 'unlocked');
+      },
+
       addExpense: (amountMinor, category, note) => {
         set((s) => ({ expenses: [{ id: newId(), amountMinor, category, note, createdAt: Date.now(), userId: s.currentUserId }, ...s.expenses] }));
         get().log('expense.add', `${category} ${amountMinor}`);
       },
       removeExpense: (id) => {
+        const s0 = get();
+        const x = s0.expenses.find((e) => e.id === id);
+        if (x && isLocked(x.createdAt, s0.settings.lockedThrough)) return; // closed period: correct with a journal instead
         set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) }));
         get().log('expense.remove', id);
       },
@@ -588,7 +648,7 @@ export function migrateState(st: any): any {
   }
   if (Array.isArray(out.tickets))
     out.tickets = out.tickets.map((t: any) => (t.steps ? t : { ...t, steps: legacySteps(st.business?.stages ?? []), mode: 'takeaway', table: null, lines: [] }));
-  for (const k of ['days', 'ingredients', 'customers', 'printers', 'bookings']) if (!Array.isArray(out[k])) out[k] = [];
+  for (const k of ['days', 'journals', 'ingredients', 'customers', 'printers', 'bookings']) if (!Array.isArray(out[k])) out[k] = [];
   if (out.business && !out.business.typeId) {
     const map: Record<string, string> = { stall: 'street', cafe: 'cafe', restaurant: 'restaurant', retail: 'grocery', service: 'laundry' };
     out.business = { ...out.business, typeId: map[out.business.template] ?? 'cafe', features: { ...ALL_FEATURES } };

@@ -5,6 +5,8 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import ReceiptView from '../components/ReceiptView';
+import Accounting from './Accounting';
+import Finance from './Finance';
 import { Button, Card, Field, H2, IconButton, Note, Pill, Row, Screen, Segmented, Sheet, Stat, Txt, PageHeader } from '../components/ui';
 import { toCsv, saveTextFile } from '../files';
 import { useT } from '../i18n';
@@ -63,6 +65,8 @@ export default function Reports() {
   const [dayOffset, setDayOffset] = useState(0);
   const [range, setRange] = useState<'1' | '7' | '30' | 'all'>('1');
   const [expOpen, setExpOpen] = useState(false);
+  const [view, setView] = useState<'sales' | 'finance' | 'accounting'>('finance');
+  const [acctStart, setAcctStart] = useState<'settle' | 'tax' | undefined>(undefined);
   const [open, setOpen] = useState<Sale | null>(null);
   const [voidReason, setVoidReason] = useState('');
 
@@ -177,8 +181,24 @@ export default function Reports() {
     await saveTextFile(`tamuko-expenses-${todayKey()}.csv`, toCsv(er), 'text/csv');
   };
 
+  if (view === 'accounting' && me?.role === 'owner')
+    return (
+      <Screen>
+        <Accounting start={acctStart} onBack={() => { setAcctStart(undefined); setView('finance'); }} />
+      </Screen>
+    );
+  if (view === 'finance')
+    return (
+      <Screen>
+        <PageHeader kicker="Finance" title="Money" />
+        <Segmented value={view} onChange={setView} options={[{ value: 'finance', label: 'Overview' }, { value: 'sales', label: 'Sales reports' }]} />
+        <Finance onAccounting={(st) => { setAcctStart(st); setView('accounting'); }} onExpenses={() => { setView('sales'); setExpOpen(true); }} />
+      </Screen>
+    );
+
   return (
     <Screen>
+      <Segmented value={view} onChange={setView} options={[{ value: 'finance', label: 'Overview' }, { value: 'sales', label: 'Sales reports' }]} />
       <PageHeader kicker="Finance" title={t('reports')} action={<Button size="sm" kind="secondary" icon="plus" label={t('expenses')} onPress={() => setExpOpen(true)} />} />
       <Segmented<ReportLevel>
         value={level}
