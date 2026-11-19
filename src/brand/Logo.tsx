@@ -12,10 +12,10 @@ export type LogoVariant = 'charcoal' | 'cream' | 'peach' | 'steel' | 'black' | '
 
 // Colour versions (§03): tile / strokes / ticket / wordmark ink / bar.
 const V: Record<LogoVariant, { tile: string; stroke: string; ticket: string; ink: string; bar: string }> = {
-  charcoal: { tile: '#29292C', stroke: '#F0EFE9', ticket: '#FF8254', ink: '#F0EFE9', bar: '#FF8254' },
-  cream: { tile: '#202326', stroke: '#F7F0E3', ticket: '#FF8254', ink: '#202326', bar: '#FF8254' },
-  peach: { tile: '#202326', stroke: '#F7F0E3', ticket: '#FF8254', ink: '#202326', bar: '#F7F0E3' },
-  steel: { tile: '#3F5A62', stroke: '#F7F0E3', ticket: '#FF8254', ink: '#F7F0E3', bar: '#FF8254' },
+  charcoal: { tile: '#2C3E66', stroke: '#F2E8D5', ticket: '#E08A60', ink: '#F2E8D5', bar: '#E08A60' },
+  cream: { tile: '#1B2A4A', stroke: '#F2E8D5', ticket: '#B5562F', ink: '#1B2A4A', bar: '#B5562F' },
+  peach: { tile: '#1B2A4A', stroke: '#F2E8D5', ticket: '#B5562F', ink: '#1B2A4A', bar: '#F2E8D5' },
+  steel: { tile: '#1B2A4A', stroke: '#F2E8D5', ticket: '#E08A60', ink: '#F2E8D5', bar: '#E08A60' },
   black: { tile: '#FFFFFF', stroke: '#111111', ticket: '#111111', ink: '#111111', bar: '#111111' },
   white: { tile: '#111111', stroke: '#FFFFFF', ticket: '#FFFFFF', ink: '#FFFFFF', bar: '#FFFFFF' },
 };
@@ -64,7 +64,7 @@ export function Lockup({ height = 36, variant = 'charcoal', product }: { height?
         <Wordmark size={product ? height * 0.6 : height * 0.95} variant={variant} />
         {/* Product name in the heading face, peach (§08). Peach on light backgrounds is ~2:1, so on cream/paper
             the label uses the wordmark ink to keep the 4.5:1 rule the guidelines also require. */}
-        {product ? <Text style={{ fontFamily: F.heading, fontSize: height * 0.6, lineHeight: height * 0.66, color: variant === 'cream' || variant === 'black' ? V[variant].ink : '#FF8254' }}>{product}</Text> : null}
+        {product ? <Text style={{ fontFamily: F.heading, fontSize: height * 0.6, lineHeight: height * 0.66, color: variant === 'cream' || variant === 'black' ? V[variant].ink : V[variant].bar }}>{product}</Text> : null}
       </View>
     </View>
   );

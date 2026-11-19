@@ -17,7 +17,7 @@ import { useTheme } from '../theme';
 if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true);
 
 const LATE_MS = 10 * 60_000;
-const INK = '#202326';
+const INK = '#141F38';
 const LATE = '#A63838';
 
 function useReduceMotion() {
@@ -89,7 +89,7 @@ function TicketCard({ tk, now, reduce, onPay, onPrint }: { tk: Ticket; now: numb
           </View>
         </Row>
         <Row gap={6} style={{ flexWrap: 'wrap' }}>
-          <View style={{ borderRadius: 6, backgroundColor: '#EADFC7', paddingHorizontal: 7, paddingVertical: 2 }}>
+          <View style={{ borderRadius: 6, backgroundColor: '#F2E8D5', paddingHorizontal: 7, paddingVertical: 2 }}>
             <Txt size={12} weight="600" color={INK}>{modeLabel(tk.mode, b.template)}{tk.table ? ` · ${tk.table}` : ''}</Txt>
           </View>
           <View style={{ borderRadius: 6, borderWidth: 1.5, borderColor: unpaid ? '#705EA5' : '#236B52', paddingHorizontal: 7, paddingVertical: 1 }}>
@@ -239,29 +239,29 @@ function PickupBoard({ tickets, onClose }: { tickets: Ticket[]; onClose: () => v
   const preparing = tickets.filter((tk) => !isReady(tk));
   const big = Math.min(72, Math.max(40, width / (landscape ? 14 : 8)));
   const col = (title: string, list: Ticket[], hot: boolean) => (
-    <View style={{ flex: 1, gap: 16, padding: 20, borderRadius: 24, backgroundColor: hot ? '#236B52' : '#29292C' }}>
-      <Txt size={22} weight="700" mono color={hot ? '#F0EFE9' : '#B8B8B0'} style={{ letterSpacing: 3, textTransform: 'uppercase' }}>{title}</Txt>
+    <View style={{ flex: 1, gap: 16, padding: 20, borderRadius: 24, backgroundColor: hot ? '#236B52' : '#1B2A4A' }}>
+      <Txt size={22} weight="700" mono color={hot ? '#F2E8D5' : '#C9B896'} style={{ letterSpacing: 3, textTransform: 'uppercase' }}>{title}</Txt>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
-        {list.length === 0 ? <Txt size={20} color="#B8B8B0">—</Txt> : null}
+        {list.length === 0 ? <Txt size={20} color="#C9B896">—</Txt> : null}
         {list.map((tk) => (
-          <View key={tk.id} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, backgroundColor: hot ? '#F0EFE9' : '#1F1F21' }}>
-            <Txt size={big} weight="800" mono color={hot ? '#202326' : '#F0EFE9'}>{tk.token}</Txt>
+          <View key={tk.id} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, backgroundColor: hot ? '#F2E8D5' : '#141F38' }}>
+            <Txt size={big} weight="800" mono color={hot ? '#141F38' : '#F2E8D5'}>{tk.token}</Txt>
           </View>
         ))}
       </View>
     </View>
   );
   return (
-    <View style={{ flex: 1, backgroundColor: '#1F1F21', padding: 20, paddingTop: 48, gap: 16 }}>
+    <View style={{ flex: 1, backgroundColor: '#141F38', padding: 20, paddingTop: 48, gap: 16 }}>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Txt size={26} weight="800" heading color="#F0EFE9">{b.name}</Txt>
+        <Txt size={26} weight="800" heading color="#F2E8D5">{b.name}</Txt>
         <Button size="sm" kind="secondary" icon="close" label="Close" onPress={onClose} />
       </Row>
       <View style={{ flex: 1, flexDirection: landscape ? 'row' : 'column', gap: 16 }}>
         {col('Preparing', preparing, false)}
         {col('Ready · please collect', ready, true)}
       </View>
-      <Txt size={14} color="#B8B8B0" center>Show your token at the counter.</Txt>
+      <Txt size={14} color="#C9B896" center>Show your token at the counter.</Txt>
     </View>
   );
 }

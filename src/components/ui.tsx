@@ -153,7 +153,7 @@ export function Button({ label, onPress, kind = 'primary', disabled, loading, ic
   // Website .btn: pill, 600 weight, 15×24 padding, peach glow on the primary action.
   const h = size === 'lg' ? 56 : size === 'sm' ? 42 : 48;
   const fs = size === 'lg' ? 17 : size === 'sm' ? 15 : 16;
-  const glow = kind === 'primary' && !disabled ? { boxShadow: '0 6px 20px -8px rgba(255,130,84,.8)', shadowColor: '#FF8254', shadowOffset: { width: 0, height: 6 }, shadowRadius: 10, shadowOpacity: 0.45, elevation: 4 } : null;
+  const glow = kind === 'primary' && !disabled ? { boxShadow: '0 6px 20px -8px rgba(181,86,47,.7)', shadowColor: '#B5562F', shadowOffset: { width: 0, height: 6 }, shadowRadius: 10, shadowOpacity: 0.45, elevation: 4 } : null;
   return (
     <Pressable
       accessibilityRole="button"
@@ -524,7 +524,7 @@ export function FadeIn({ children, delay = 0, style, distance = 10 }: { children
   );
 }
 
-const GLOW = 'rgba(255,130,84,';
+const GLOW = 'rgba(181,86,47,';
 /** Selectable tile: hover glow on web, peach glow and a soft pop when selected. */
 export function Tile({ icon, label, hint, selected, onPress, style }: { icon: IconName; label: string; hint?: string; selected: boolean; onPress: () => void; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
@@ -543,7 +543,7 @@ export function Tile({ icon, label, hint, selected, onPress, style }: { icon: Ic
         {(state: any) => {
           const hovered = !!state.hovered;
           const glow = selected
-            ? { boxShadow: `0 0 0 4px ${GLOW}.22), 0 12px 28px -10px ${GLOW}.55)`, shadowColor: '#FF8254', shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, shadowOpacity: 0.45, elevation: 6 }
+            ? { boxShadow: `0 0 0 4px ${GLOW}.22), 0 12px 28px -10px ${GLOW}.5)`, shadowColor: '#B5562F', shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, shadowOpacity: 0.45, elevation: 6 }
             : hovered
               ? { boxShadow: `0 0 0 3px ${GLOW}.14), 0 10px 24px -12px ${GLOW}.4)` }
               : (t.shadow as object);

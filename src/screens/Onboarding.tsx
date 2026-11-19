@@ -102,7 +102,7 @@ export default function Onboarding() {
           <LanguageButton onPicked={() => setLangPicked(true)} />
         </Row>
         <Row gap={6}>
-          {[0, 1].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: 99, backgroundColor: i <= step ? '#FF8254' : '#0000001A' }} />)}
+          {[0, 1].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: 99, backgroundColor: i <= step ? th.primary : th.border }} />)}
         </Row>
 
         {step === 0 ? (

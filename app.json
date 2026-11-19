@@ -48,7 +48,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FF8254",
+        "backgroundColor": "#1B2A4A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -66,8 +66,8 @@
       "favicon": "./assets/favicon.png",
       "name": "tamuko",
       "shortName": "tamuko",
-      "themeColor": "#FF8254",
-      "backgroundColor": "#EADFC7",
+      "themeColor": "#1B2A4A",
+      "backgroundColor": "#F2E8D5",
       "output": "single"
     },
     "plugins": [
@@ -88,10 +88,10 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#EADFC7",
+          "backgroundColor": "#F2E8D5",
           "dark": {
             "image": "./assets/splash-icon-dark.png",
-            "backgroundColor": "#1F1F21"
+            "backgroundColor": "#141F38"
           }
         }
       ],
@@ -122,7 +122,7 @@
       ]
     ],
     "scheme": "tamuko",
-    "backgroundColor": "#EADFC7",
+    "backgroundColor": "#F2E8D5",
     "extra": {
       "supportsRTL": true
     }

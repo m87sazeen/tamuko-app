@@ -1,21 +1,21 @@
-// tamuko. brand guidelines v1.0 §05 Colour.
-// "Peach is precious: it marks the one thing to do next. Backgrounds stay calm (charcoal or cream),
-//  steel and blue carry structure. Status colours never change with a merchant's theme."
-// Proportion 60% charcoal/cream · 30% steel/blue/ivory · 10% peach. Never white text on peach.
-// All text pairs below are checked to WCAG 4.5:1.
+// tamuko. palette — TNDL 1.0 (Ivory · Navy · Copper · Mocha · Sand). Replaces brand guidelines v1.0 colours.
+// Copper marks the one thing to do next. Navy carries structure and text. Ivory/Sand stay calm in the background.
+// Mocha is the accent for small text on ivory (copper text on ivory is only 3.98:1).
+// Status colours never change with a merchant's theme. All text pairs below are checked to WCAG 4.5:1.
 import { useColorScheme } from 'react-native';
 import { useApp } from './store';
 
 export const BRAND = {
-  peach: '#FF8254',
-  steel: '#3F5A62',
-  blue: '#526889',
-  charcoal: '#1F1F21',
-  cream: '#EADFC7',
-  paper: '#F7F0E3',
-  ivory: '#F0EFE9',
-  stone: '#B8B8B0',
-  ink: '#202326', // text on peach (6.45:1)
+  ivory: '#F2E8D5',
+  navy: '#1B2A4A',
+  copper: '#B5562F',
+  mocha: '#8C5A3C',
+  sand: '#C9B896',
+  paper: '#FAF4E8',
+  copperLight: '#E08A60', // copper for dark mode (5.4:1 on navy)
+  navyDeep: '#141F38',
+  ink: '#141F38', // text on light copper
+  onCopper: '#FFF8EE', // text on copper (4.59:1)
 } as const;
 
 export type Theme = {
@@ -51,22 +51,22 @@ const webShadow = (css: string, color: string, y: number, r: number, o: number) 
 
 export const light: Theme = {
   dark: false,
-  bg: BRAND.cream,
-  surface: BRAND.paper, // "Paper · tickets, receipts, light cards"
-  raised: '#FFF8EE',
-  inset: '#DED2BC',
-  primary: BRAND.peach,
-  onPrimary: BRAND.ink,
-  select: BRAND.steel,
-  onSelect: BRAND.paper, // 6.50:1
-  accentText: BRAND.steel,
-  text: '#30474F', // website "Warm" --text, 6.9:1 on cream
-  textDim: '#575F5C', // 4.97:1 on cream
-  border: '#CFC3AD',
-  borderStrong: BRAND.steel,
-  focus: BRAND.steel,
-  overlay: '#20232699',
-  glass: 'rgba(247,240,227,0.72)',
+  bg: BRAND.ivory,
+  surface: BRAND.paper,
+  raised: '#FFFAF1',
+  inset: '#E6DAC2',
+  primary: BRAND.copper,
+  onPrimary: BRAND.onCopper, // 4.59:1
+  select: BRAND.navy,
+  onSelect: BRAND.ivory, // 11.7:1
+  accentText: BRAND.mocha, // 4.74:1 on ivory
+  text: BRAND.navy, // 11.7:1 on ivory
+  textDim: '#4F5B70', // 5.64:1 on ivory
+  border: BRAND.sand,
+  borderStrong: BRAND.navy,
+  focus: BRAND.navy,
+  overlay: '#141F3899',
+  glass: 'rgba(250,244,232,0.74)',
   paper: BRAND.paper,
   paperInk: BRAND.ink,
   success: '#236B52',
@@ -75,27 +75,27 @@ export const light: Theme = {
   info: '#2C668F',
   pending: '#705EA5',
   statusBg: BRAND.paper,
-  shadow: webShadow('0 1px 2px rgba(48,71,79,.06), 0 12px 32px -12px rgba(48,71,79,.22)', '#30474F', 10, 16, 0.14),
+  shadow: webShadow('0 1px 2px rgba(27,42,74,.06), 0 12px 32px -12px rgba(27,42,74,.22)', '#1B2A4A', 10, 16, 0.14),
 };
 
 export const dark: Theme = {
   dark: true,
-  bg: BRAND.charcoal,
-  surface: '#29292C',
-  raised: '#323238',
-  inset: '#171719',
-  primary: BRAND.peach,
-  onPrimary: BRAND.ink,
-  select: BRAND.blue, // "Dashboard Blue · dark-mode accent, selected panels"
-  onSelect: BRAND.ivory, // 4.93:1
-  accentText: BRAND.peach,
+  bg: BRAND.navyDeep,
+  surface: BRAND.navy,
+  raised: '#22345A',
+  inset: '#0F182C',
+  primary: BRAND.copperLight,
+  onPrimary: BRAND.ink, // 6.22:1
+  select: '#2C3E66',
+  onSelect: BRAND.ivory, // 8.69:1
+  accentText: BRAND.copperLight, // 5.40:1 on navy
   text: BRAND.ivory,
-  textDim: BRAND.stone, // 7.27:1 on surface
-  border: '#3A3A40',
-  borderStrong: '#7C91AD',
-  focus: '#FFC09C',
+  textDim: BRAND.sand, // 7.30:1 on navy
+  border: '#2E3F63',
+  borderStrong: BRAND.sand,
+  focus: '#F0B08C',
   overlay: '#000000B3',
-  glass: 'rgba(41,41,44,0.55)', // §07 glass
+  glass: 'rgba(27,42,74,0.6)',
   paper: BRAND.paper,
   paperInk: BRAND.ink,
   success: '#73D4A2',
@@ -103,7 +103,7 @@ export const dark: Theme = {
   error: '#FF8D87',
   info: '#86B9E3',
   pending: '#BAA7EE',
-  statusBg: '#29292C',
+  statusBg: BRAND.navy,
   shadow: webShadow('0 1px 2px rgba(0,0,0,.3), 0 16px 40px -16px rgba(0,0,0,.6)', '#000000', 12, 20, 0.45),
 };
 
